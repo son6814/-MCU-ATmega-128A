@@ -1,0 +1,63 @@
+/*
+ * LedBlink.c
+ * Created: 2022-12-27 오후 1:13:48
+ * Author : Son
+
+GPIO(GP input&Output) 임의의 pin을 input으로 사용할지, output으로 사용할지 정의하고서 사용해야함
+결국, DDR(Data Direction Register)을 할당한다는 의미
+아래 Code에서는 결국 DDR의 port'D'(DDRD)에다가 사용한다는 의미의 코드를 작성한 것
+결국 DDR, Reigister는 CPU 내부의 기능설정을 하기위해 사용하는 Memory의 한 종류
+*/
+
+#define F_CPU 16000000UL // unsigned long 16mhz 의 딜레이 // clock Hz 정의_16MHz
+#include <avr/io.h> // SFR(special function register) 함수 정의 header
+#include <util/delay.h> // delay function 사용하기위한 header
+
+#define LED_PORT PORTD
+#define LED_DDR DDRD
+
+void right_sh(uint8_t *ledData);
+void left_sh(uint8_t *ledData);
+void gpioOutPut(uint8_t data);
+void ledInit();
+
+int main(void)
+{
+	
+	ledInit();
+	
+	uint8_t ledData = 0x01;
+	
+    while (1) 
+    {
+
+		for(int i = 0; i<7; i++){
+			right_sh(&ledData);
+			_delay_ms(100);
+		}
+		for(int i = 0; i<7; i++){
+			left_sh(&ledData);
+			_delay_ms(100);
+		}
+    }
+}
+
+void ledInit(){
+	LED_DDR = 0xff; // D포트의 모든것을  output으로 설정
+}
+
+void gpioOutPut(uint8_t data){
+	LED_PORT = data;
+}
+
+void left_sh(uint8_t *Data){ // main: caller, left_sh: callee // main에서 주소값을 주고, 함수에서 포인터로 받기 때문에  Reference가 포인터 로지정한 함수의 Value에 삽입
+	*Data = (*Data << 7) | (*Data >> 1); // round shift
+		// =*(&ledData)=(*(&ledData)>>7|(*(&ledData)<<1); // '해당 주소가 가리키는 곳에다가 값을 넣겠다'라는 의미
+		// = ledData=(ledData>>7)|(ledData<<1);
+	gpioOutPut(*Data);	
+}
+
+void right_sh(uint8_t *Data){
+	*Data = (*Data >> 7) | (*Data << 1); // round shift
+	gpioOutPut(*Data);
+}
